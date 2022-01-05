@@ -13,5 +13,18 @@
 
 ## Linked List
 
-* make a simple list and print it  
+* [OBJ] make a simple list and print it  
 
+* The diagonal slash in the last node stands for the value 
+**null** which is how the last node shows that it has no successor.
+
+*  When a **memory address** is used as a link between nodes of a data 
+structure it is sometimes called a **pointer**. 
+
+* A visit to every node of a data structure is called a **traversal**. 
+
+* 
+
+* 
+
+* 
