@@ -23,8 +23,8 @@ structure it is sometimes called a **pointer**.
 
 * A visit to every node of a data structure is called a **traversal**. 
 
-* 
+* jr $ra ---> go back to the calling function
 
-* 
+* jal label ---> go to the label function.
 
 * 
