@@ -1,14 +1,17 @@
-	.text
-	.globl main
+		.text
+		.globl main
 
 main:
-		#------------------------------------------
+		# Pointers used in the program
+		#-----------------------------------------------
 		# $s7 --> is head pointer
 		# $a3 --> is the current
-		#------------------------------------------
+		# $t0 --> is the new node pointer
+		# Maybe i will need a temp one in the sorted list
+		#------------------------------------------------
 
 		#--------------------------------------------------
-		# Create a new list(maybe head pointer ?) and init
+		# Print prompt and read int from stdin
 		#--------------------------------------------------
 
 		la $a0,msg 			# print the msg
@@ -19,34 +22,41 @@ main:
 		li $v0,4
 		syscall
 
-		li $v0,5        	# read the option(int)
+		li $v0,5        	# read int from stdin
 		syscall		    
 		move $t0,$v0
 
-		#---------------------------------------------
-		# based on user input go one of the following
-		#----------------------------------------------
+		#-----------------------------------------
+		# Based on the user input go to the label
+		#-----------------------------------------
 
 		beq $t0,1,insert
 		#beq $t0,2, delete
 		beq $t0,3,print
 		beq $t0,4,exit
 
-		la $a0,exitMsg		# print exitMsg
+		#--------------------------------------------------------
+		# If user's input is not in the range (1,4) jump to main
+		#--------------------------------------------------------
+
+		la $a0,otherMsg		# print otherMsg
 		li $v0,4
 		syscall
 
-		li $v0,10			# exit program
+		la $a0,endl 		# print '\n'
+		li $v0,4
 		syscall
 
-
+		j main				# jump to main label
+		
 
 insert:    
-		#---------------------------------------------
+		#--------------------------------------------
 		# Function to insert a new node in the list
-		#----------------------------------------------
+		#--------------------------------------------
 
 		# sbrk() allocates space for the new node
+		# allocate memory with sbrk for a new node 
 
 		li,$a0,8   			# $a0 number of bytes to alloc	 		
 		li $v0,9        	# $v0 is the address of alloc mem
@@ -55,18 +65,18 @@ insert:
 
 		sw $zero,4($t1) 	# initialize next pointer to zero
 
-		#------------------------------------------
+		#-----------------------------------------------
 		la $a0,insertMsg	# print insertMsg
 		li $v0,4
 		syscall
 
-		li $v0,5        	# read the int from stdin
+		li $v0,5        	# read the int from stdin and move it in $t0
 		syscall		    
 		move $t0,$v0
-		#-------------------------------------------
+		#-----------------------------------------------
 
 		# if the list is empty then insert in the head node
-		beq $zero,$s7,declareFirstNode
+		beq $s7,$zero,declareFirstNode
 
 		
 		# $a3 points to the current node
@@ -74,26 +84,91 @@ insert:
 		#                                 returned by the sbrk command
 
 
-		# if list is not empty( the second node + all the others )
-		sw   $t1, 4($a3) 
-		move $a3, $t1		# set curr pointer ($a3) to point to the new node
+		
+		lw $t3,($s7)
+		ble $t0,$t3,newHead			# branch on less than or equal
 
-		sw  $t0, ($t1)  	# $t0---> the int read from stdin 
+
+		# if list is not empty( the second node + all the others )
+		##sw   $t1, 4($a3) 
+		##move $a3, $t1		# set curr pointer ($a3) to point to the new node
+
+		##sw $t0, ($t1)  	# $t0---> the int read from stdin
+
+		move $a3,$s7  # current = head (move command copies the value of one register into another)
+
+		# this loop2 is to find the correct node to insert
+
+	loop2:
+			lw $t4,($a3) # load in $t4 the value pointed by $a3
+			
+			#-----------------------------------------
+			# if(current != Null && newnode <= current )
+			#-----------------------------------------
+			beq $a3,$zero,endloop2
+            ble $t0,$t4,  endloop2
+
+            move $t6,$a3        # mbajme nje dummy provizor ketu
+
+            lw $a3,4($a3) 		# current = current->next           
+
+			j loop2 
 	
+	endloop2:
+
+		# fix the pointers
+		##lw  $t5,4($a3)
+
+		##sw  $t5,4($t1)
+		
+		##sw  $t1,4($a3) 
+
+
+		lw  $t5,4($t6)
+		sw  $t5,4($t1)
+		sw  $t1,4($t6)
+
+
+		# store the integer to the node
+		sw  $t0, ($t1)  	# $t0---> the int read from stdin
 
 		j main
 
+		#---------------------------------------------------------------
+		# 2. Make new head node in the list
+		#--------------------------------------------------------------
+newHead:
+		
+		sw $s7,4($t1)
+		
+		move $s7, $t1		# set head pointer ($s7) to point to the new node
+		# move $a3, $t1		# set curr pointer ($a3) to point to the new node
+		
+		sw  $t0, ($t1)  	# $t0--->the int read from stdin 
+							# store the value in the new node
 
-# Here we declare the first node of the linkeList
+		# fix the pointers
+		# sw   $t1, 4($a3) 
+
+
+		move $a0,$t0 		# print the inserted int (Debug purposes)
+		li $v0,1
+		syscall
+
+		j main
+	
+		#-------------------------------------------------------------------
+		# 1. Here we declare the first node of the linkedList
+		#-------------------------------------------------------------------
 declareFirstNode:
 
-		# Just printing here
+		# Just printing here( For debug purposes )
 	#--------------------------------------------------------
 		la $a0,lala			# print lala
 		li $v0,4
 		syscall
 
-		la $a0,endl			# print exitMsg
+		la $a0,endl			# print endl
 		li $v0,4
 		syscall
 	#--------------------------------------------------
@@ -101,15 +176,13 @@ declareFirstNode:
 		# la	$s7, ($t1)		# set head pointer ($s7) to point to the new node
 		# la	$a3, ($t1)		# set curr pointer ($a3) to point to the new node
 
-		# I will try with lw for now
-
-		move	$s7, $t1		# set head pointer ($s7) to point to the new node
-		move	$a3, $t1		# set curr pointer ($a3) to point to the new node
+		move $s7, $t1		# set head pointer ($s7) to point to the new node
+		move $a3, $t1		# set curr pointer ($a3) to point to the new node
 		
 		sw  $t0, ($t1)  	# $t0--->the int read from stdin 
 							# store the value in the new node
 
-		move $a0,$t0
+		move $a0,$t0 		# print the inserted int (Debug purposes)
 		li $v0,1
 		syscall
 
@@ -119,8 +192,8 @@ declareFirstNode:
 	# print all the list from the head pointer.
 print:
 	
-	# start from the start of the list
-	move $a3,$s7  # current = head (move command copies the value of one register into another)
+		# start from the start of the list
+		move $a3,$s7  # current = head (move command copies the value of one register into another)
 
 	loop:
 		beq $a3,$zero,endloop
@@ -156,7 +229,6 @@ print:
 	j main
 
 
-
 exit:	
 		la $a0,exitMsg	# print exitMsg
 		li $v0,4
@@ -164,6 +236,7 @@ exit:
 
 		li $v0,10		# exit program
 		syscall
+
 
 
 	.data
@@ -177,4 +250,5 @@ insertMsg: .asciiz "Insert an integer value: "
 exitMsg:   .asciiz "Exiting program..."
 arrow:	   .asciiz "-->"
 nullMsg:   .asciiz "Null"
+otherMsg:  .asciiz "Please insert 1,2,3,4"
 lala:      .asciiz "lalala"
