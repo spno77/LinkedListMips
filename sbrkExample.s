@@ -3,20 +3,22 @@
 
 main:
 
-					# sbrk for two ints
-	li,$a0,8   		# $a0 number of bytes to alloc	 		
+	# sbrk for two ints ---> 8 bytes.
+
+	li,$a0,8   		# $a0 number of bytes to alloc
 	li $v0,9        # $v0 is the address of alloc mem
 	syscall
-		       
 	move $t1,$v0
 
-	li $v0,5
+	li $v0,5		# Read an integer from stdin
 	syscall
+
 	sw $v0,($t1) 	# store it to the heap
 
-	li $v0,5
+	li $v0,5		# Read another integer from stdin
 	syscall
-	sw $v0,4($t1)   # store the second one 
+
+	sw $v0,4($t1)   # store the second one
 
 	lw $a0,($t1)   	# print the first one
 	li $v0,1

@@ -6,7 +6,7 @@ main:
 		#-----------------------------------------------
 		# $s7 --> is head pointer
 		# $a3 --> is the current
-		# $t0 --> is the new node pointer
+		# $t0 --> pointer to the new node(return of sbrk() call)
 		# Maybe i will need a temp one in the sorted list
 		#------------------------------------------------
 
@@ -63,7 +63,7 @@ insert:
 		syscall
 		move $t1,$v0		
 
-		sw $zero,4($t1) 	# initialize next pointer to zero
+		sw $zero,4($t1) 	# initialize next pointer of the newNode to zero
 
 		#-----------------------------------------------
 		la $a0,insertMsg	# print insertMsg
@@ -83,7 +83,6 @@ insert:
 		# $t1 points to the new node ---> because we have moved here the address of the node
 		#                                 returned by the sbrk command
 
-
 		
 		lw $t3,($s7)
 		ble $t0,$t3,newHead			# branch on less than or equal
@@ -98,23 +97,35 @@ insert:
 		move $a3,$s7  # current = head (move command copies the value of one register into another)
 
 		# this loop2 is to find the correct node to insert
-
 	loop2:
-			lw $t4,($a3) # load in $t4 the value pointed by $a3
+		
+		beq $a3,$zero,lastNode
+
+		lw $t4,($a3) 		# load in $t4 register the value pointed by $a3
 			
-			#-----------------------------------------
-			# if(current != Null && newnode <= current )
-			#-----------------------------------------
-			beq $a3,$zero,endloop2
-            ble $t0,$t4,  endloop2
+		#-----------------------------------------
+		# if(current != Null && newnode <= current )
+		#-----------------------------------------
+		#beq $t4,$zero,lastNode
+		
+		#	la $a0,lolo			# print lololo
+		#	li $v0,4
+		#	syscall
 
-            move $t6,$a3        # mbajme nje dummy provizor ketu
+		#	la $a0,endl			# print endl
+		#	li $v0,4
+		#	syscall
+        ble $t0,$t4,  endloop2
 
-            lw $a3,4($a3) 		# current = current->next           
+        move $t6,$a3        # this is a dummy register used to store the previous pointer
 
-			j loop2 
+        lw $a3,4($a3) 		# current = current->next           
+
+		j loop2 
 	
 	endloop2:
+
+		#beq $t4,$zero,lastNode
 
 		# fix the pointers
 		##lw  $t5,4($a3)
@@ -123,6 +134,14 @@ insert:
 		
 		##sw  $t1,4($a3) 
 
+		#--------------------------------------------------------
+		# Here we fix the pointers
+		#--------------------------------------------------------
+
+		#----------Check the insertion in the end----------------
+
+
+		#--------------------------------------------------------
 
 		lw  $t5,4($t6)
 		sw  $t5,4($t1)
@@ -137,6 +156,16 @@ insert:
 		#---------------------------------------------------------------
 		# 2. Make new head node in the list
 		#--------------------------------------------------------------
+
+lastNode:
+				
+		sw  $t1,4($t6)
+
+		# store the integer to the node
+		sw  $t0, ($t1)  	# $t0---> the int read from stdin
+
+		j main
+
 newHead:
 		
 		sw $s7,4($t1)
@@ -216,18 +245,15 @@ print:
 	
 	endloop:
 
+		la $a0,nullMsg	# print nullMsg
+		li $v0,4
+		syscall
 
+		la $a0,endl		# print endl
+		li $v0,4
+		syscall
 
-	la $a0,nullMsg	# print nullMsg
-	li $v0,4
-	syscall
-
-	la $a0,endl		# print endl
-	li $v0,4
-	syscall
-
-	j main
-
+		j main
 
 exit:	
 		la $a0,exitMsg	# print exitMsg
@@ -252,3 +278,4 @@ arrow:	   .asciiz "-->"
 nullMsg:   .asciiz "Null"
 otherMsg:  .asciiz "Please insert 1,2,3,4"
 lala:      .asciiz "lalala"
+lolo:      .asciiz "lololo"
