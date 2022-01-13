@@ -31,7 +31,7 @@ main:
 		#-----------------------------------------
 
 		beq $t0,1,insert
-		#beq $t0,2, delete
+		beq $t0,2,delete
 		beq $t0,3,print
 		beq $t0,4,exit
 
@@ -218,7 +218,7 @@ declareFirstNode:
 		j main
 
 
-	# print all the list from the head pointer.
+	# print all the list elements, starting from the head pointer
 print:
 	
 		# start from the start of the list
@@ -245,22 +245,89 @@ print:
 	
 	endloop:
 
-		la $a0,nullMsg	# print nullMsg
+		la $a0,nullMsg		# print nullMsg
 		li $v0,4
 		syscall
 
-		la $a0,endl		# print endl
+		la $a0,endl			# print endl
 		li $v0,4
 		syscall
 
 		j main
 
-exit:	
-		la $a0,exitMsg	# print exitMsg
+# option 2 delete
+delete:
+		la $a0,deleteMsg	# print deleteMsg
 		li $v0,4
 		syscall
 
-		li $v0,10		# exit program
+		li $v0,5        	# read an int from stdin and move it in $t0
+		syscall		    
+		move $t0,$v0
+
+		move $a3,$s7		# current = head
+
+		# Find the node we want to delete
+	loop3:
+		
+		lw $t5,($a3)
+
+		beq $t0,$t5,endloop3
+
+		move $t6,$a3		# keep track of the previous node.
+		lw $a3,4($a3)		# go to the next pointer
+
+		# Check if we reached the last node (next pointer == 0)
+		beq $a3,$zero,missing
+
+		j loop3
+
+	endloop3:
+
+		# check if the node we want to delete is the head of the list
+		lw $t4,($s7)
+		beq $t0,$t4,deleteHead
+
+		# get the next node of the current
+		lw $a3,4($a3)
+		move $t5,$a3
+
+		# store it in the previous node 
+		sw $t5,4($t6)
+
+		j main
+
+deleteHead:
+
+		# next node of the head is now the new head
+		
+		# go to the next node
+		lw $a3,4($a3)
+		move $s7,$a3	# head pointer point to next node 
+
+		j main
+
+# the case if element is not in the list
+missing: 
+
+		la $a0,missingMsg	# print missingMsg
+		li $v0,4
+		syscall
+
+		la $a0,endl   		# print endline '\n'
+		li $v0,4
+		syscall
+	
+		j main
+		
+
+# option 4 exit
+exit:	
+		la $a0,exitMsg		# print exitMsg
+		li $v0,4
+		syscall
+
+		li $v0,10			# exit program
 		syscall
 
 
@@ -273,9 +340,12 @@ msg:	.asciiz "Choose one of the following options :
 			4 --> Exit"
 endl:	   .asciiz "\n"
 insertMsg: .asciiz "Insert an integer value: "
+deleteMsg: .asciiz "Delete node with integer value: "
 exitMsg:   .asciiz "Exiting program..."
 arrow:	   .asciiz "-->"
+angle:	   .asciiz ">"
 nullMsg:   .asciiz "Null"
 otherMsg:  .asciiz "Please insert 1,2,3,4"
+missingMsg:.asciiz "This element is not in the list"
 lala:      .asciiz "lalala"
 lolo:      .asciiz "lololo"
